@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">Computer Vision + FastAPI</p>
+      <h1>Hand Gesture Controlled Media Player</h1>
+      <p class="subtitle">Control system audio and media playback with your webcam gestures.</p>
+      <div class="cta-row">
+        <div class="input-group">
+          <label for="cameraIndex">Camera Index:</label>
+          <input type="number" id="cameraIndex" value="0" min="0" max="10" />
+        </div>
+        <button id="startGesture" class="btn btn-primary">Start Gesture Engine</button>
+        <button id="stopGesture" class="btn btn-ghost">Stop</button>
+      </div>
+      <p id="cameraHint" class="camera-hint"></p>
+    </header>
+
+    <section class="grid two-col">
+      <article class="panel status-panel">
+        <h2>Realtime Status</h2>
+        <div class="stats">
+          <div class="stat">
+            <span class="label">Engine</span>
+            <span id="engineState" class="value">Idle</span>
+          </div>
+          <div class="stat">
+            <span class="label">FPS</span>
+            <span id="fps" class="value">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Volume</span>
+            <span id="volume" class="value">--</span>
+          </div>
+          <div class="stat">
+            <span class="label">Muted</span>
+            <span id="muted" class="value">--</span>
+          </div>
+        </div>
+        <div class="now-block">
+          <p>Detected Gesture: <strong id="lastGesture">None</strong></p>
+          <p>Last Action: <strong id="lastAction">None</strong></p>
+          <p class="error" id="engineError"></p>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Gesture Map</h2>
+        <ul id="gestureMap" class="gesture-list"></ul>
+      </article>
+    </section>
+
+    <section class="grid two-col">
+      <article class="panel">
+        <h2>Manual Media Controls</h2>
+        <div class="media-controls">
+          <button class="btn" data-action="previous">Previous</button>
+          <button class="btn btn-primary" data-action="play-pause">Play / Pause</button>
+          <button class="btn" data-action="next">Next</button>
+          <button class="btn" data-action="volume-down">Volume -</button>
+          <button class="btn" data-action="volume-up">Volume +</button>
+          <button class="btn" data-action="mute-toggle">Mute Toggle</button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Event Feed</h2>
+        <div id="eventFeed" class="feed"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>

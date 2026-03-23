@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+jinja2
+opencv-python
+mediapipe
+python-multipart
