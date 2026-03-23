@@ -48,6 +48,10 @@ class GestureService:
         self._error: str | None = None
         self._events: deque[GestureEvent] = deque(maxlen=20)
         self._latest_frame: bytes | None = None
+        self._armed_for_action = True
+        self._stable_gesture: str | None = None
+        self._stable_count = 0
+        self._frames_required_for_trigger = 4
 
         self._gesture_to_action = {
             "OPEN_PALM": "play-pause",
@@ -304,6 +308,9 @@ class GestureService:
 
             self._stop_event.clear()
             self._startup_event.clear()
+            self._armed_for_action = True
+            self._stable_gesture = None
+            self._stable_count = 0
             self._thread = threading.Thread(target=self._run_loop, daemon=True)
             self._running = True
             self._error = None
@@ -427,15 +434,46 @@ class GestureService:
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 results = hands.process(rgb)
                 gesture_result = self._recognizer.recognize(results)
+                hand_present = bool(getattr(results, "multi_hand_landmarks", None))
 
                 # Update latest frame for video feed
                 _, jpeg = cv2.imencode(".jpg", frame)
                 with self._lock:
                     self._latest_frame = jpeg.tobytes()
                     self._last_gesture = gesture_result.gesture
+                    self._error = None
 
-                if gesture_result.gesture:
-                    self._trigger_action(gesture_result.gesture)
+                # Rearm only after hand is fully removed from frame.
+                if not hand_present:
+                    self._armed_for_action = True
+                    self._stable_gesture = None
+                    self._stable_count = 0
+                    continue
+
+                gesture = gesture_result.gesture
+                if not gesture:
+                    # Hand is present but no valid gesture yet; do not rearm until hand leaves frame.
+                    self._stable_gesture = None
+                    self._stable_count = 0
+                    continue
+
+                if not self._armed_for_action:
+                    # Ignore further gestures until hand is removed and re-presented.
+                    continue
+
+                if gesture == self._stable_gesture:
+                    self._stable_count += 1
+                else:
+                    self._stable_gesture = gesture
+                    self._stable_count = 1
+
+                if self._stable_count < self._frames_required_for_trigger:
+                    continue
+
+                self._trigger_action(gesture)
+                self._armed_for_action = False
+                self._stable_gesture = None
+                self._stable_count = 0
 
                 now = time.time()
                 delta = now - prev_time

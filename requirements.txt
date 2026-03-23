@@ -1,6 +1,10 @@
 fastapi
 uvicorn[standard]
 jinja2
-opencv-contrib-python==4.13.0.92
+opencv-contrib-python
 mediapipe==0.10.11
 python-multipart
+pycaw
+comtypes
+pyautogui
+pywin32
