@@ -8,6 +8,7 @@ const engineError = document.getElementById("engineError");
 const gestureMap = document.getElementById("gestureMap");
 const eventFeed = document.getElementById("eventFeed");
 const cameraHint = document.getElementById("cameraHint");
+const videoFeed = document.getElementById("videoFeed");
 
 const startGestureButton = document.getElementById("startGesture");
 const stopGestureButton = document.getElementById("stopGesture");
@@ -26,6 +27,16 @@ function updateStatus(payload) {
 
   engineState.textContent = gesture.running ? "Running" : "Stopped";
   fps.textContent = String(gesture.fps ?? 0);
+
+  if (gesture.running) {
+    if (!videoFeed.src || videoFeed.src.indexOf("/api/video_feed") === -1) {
+      videoFeed.src = "/api/video_feed";
+      videoFeed.style.display = "block";
+    }
+  } else {
+    videoFeed.src = "";
+    videoFeed.style.display = "none";
+  }
 
   const vol = audio.volume_percent;
   volume.textContent = Number.isFinite(vol) ? `${vol}%` : "N/A";
@@ -84,11 +95,21 @@ async function sendMediaAction(action) {
 }
 
 const cameraIndexInput = document.getElementById("cameraIndex");
+const cameraSourceInput = document.getElementById("cameraSource");
 
 startGestureButton.addEventListener("click", async () => {
   try {
     const index = Number(cameraIndexInput.value || 0);
-    const data = await callJson(`/api/gesture/start?camera_index=${index}`, "POST");
+    const source = (cameraSourceInput.value || "").trim();
+    const query = new URLSearchParams();
+
+    if (source) {
+      query.set("camera_source", source);
+    } else {
+      query.set("camera_index", String(index));
+    }
+
+    const data = await callJson(`/api/gesture/start?${query.toString()}`, "POST");
     if (!data.ok) {
       engineError.textContent = data.message || "Failed to start gesture engine";
       return;
@@ -145,11 +166,14 @@ async function loadCameraInfo() {
     const payload = await callJson("/api/cameras");
     const available = payload.available_cameras || [];
     if (available.length === 0) {
-      cameraHint.textContent = "No cameras detected. If you are in VM/WSL/Docker, pass through your webcam to Linux.";
-      startGestureButton.disabled = true;
+      cameraHint.textContent =
+        "No local cameras detected. You can still use phone stream URL (IP Webcam/DroidCam).";
+      startGestureButton.disabled = false;
       return;
     }
-    cameraHint.textContent = `Available camera indices: ${available.join(", ")}`;
+    cameraHint.textContent =
+      `Available camera indices: ${available.join(", ")}. ` +
+      "Or enter phone stream URL to use mobile camera.";
     if (!available.includes(Number(cameraIndexInput.value))) {
       cameraIndexInput.value = String(available[0]);
     }

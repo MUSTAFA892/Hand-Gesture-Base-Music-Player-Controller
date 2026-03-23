@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -49,8 +49,10 @@ def get_status() -> JSONResponse:
 
 
 @app.post("/api/gesture/start")
-def start_gesture_service(camera_index: int = 0) -> JSONResponse:
-    return JSONResponse(gesture_service.start(camera_index=camera_index))
+def start_gesture_service(camera_index: int = 0, camera_source: str | None = None) -> JSONResponse:
+    return JSONResponse(
+        gesture_service.start(camera_index=camera_index, camera_source=camera_source)
+    )
 
 
 @app.get("/api/cameras")
@@ -58,9 +60,22 @@ def get_cameras() -> JSONResponse:
     return JSONResponse({"available_cameras": gesture_service.list_available_cameras()})
 
 
+@app.get("/api/cameras/diagnostics")
+def get_camera_diagnostics() -> JSONResponse:
+    return JSONResponse(gesture_service.diagnose_cameras())
+
+
 @app.post("/api/gesture/stop")
 def stop_gesture_service() -> JSONResponse:
     return JSONResponse(gesture_service.stop())
+
+
+@app.get("/api/video_feed")
+def video_feed() -> StreamingResponse:
+    return StreamingResponse(
+        gesture_service.video_feed(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
 
 
 @app.post("/api/media/{action}")
